@@ -7,21 +7,26 @@ const isAuthenticated = require("../middleware/isAuthenticated");
 const convertToBase64 = require("../utils/convertToBase64");
 
 cloudinary.config({
-  cloud_name: "dfjr5a0zf",
-  api_key: "773499757812782",
-  api_secret: "R5TpFtd_bwRruc9HOC1qg4p8ANo",
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
 const Offer = require("../models/Offer");
 
 router.post(
   "/offer/publish",
   isAuthenticated,
-  fileUpload(),
+  fileUpload("pictures"),
   async (req, res) => {
     try {
-      const picture = req.files.picture;
-      const cloudinaryResponse = await cloudinary.uploader.upload(
-        convertToBase64(picture)
+      const cloudinaryResponses = await Promise.all(
+        req.files.map(async (picture) => {
+          const cloudinaryResponse = await cloudinary.uploader.upload(
+            convertToBase64(picture)
+          );
+          return cloudinaryResponse; // Stockez la réponse de Cloudinary
+        })
       );
       const { title, description, price, condition, city, brand, size, color } =
         req.body;
@@ -47,7 +52,7 @@ router.post(
           { COULEUR: color },
           { EMPLACEMENT: city },
         ],
-        product_image: cloudinaryResponse,
+        product_image: cloudinaryResponses,
         owner: req.user,
       });
       await newOffer.save();
