@@ -8,6 +8,10 @@ require("dotenv").config();
 
 mongoose.connect(process.env.MONGODB_URI);
 
+app.get("/", (req, res) => {
+  res.json({ message: "Bienvenue sur le serveur de Murat!" });
+});
+
 const userRouter = require("./routes/user");
 app.use(userRouter);
 
